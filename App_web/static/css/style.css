@@ -1,15 +1,4 @@
-.device {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-}
-.device-item {
-  cursor: pointer;
-  padding: 10px;
-  background-color: #f2f2f2;
-  border: 1px solid #ccc;
-  margin-bottom: 5px;
-}
+
 .device-item:hover {
   background-color: #e6e6e6;
 }
@@ -27,3 +16,10 @@ form {
   margin-right: 10px; 
 }
 
+#tradeWidget, #trainWidget {
+  display: none; /* Скрываем виджет по умолчанию */
+  border: 1px solid #ccc;
+  padding: 20px;
+  margin-top: 20px;
+  width: 300px;
+}

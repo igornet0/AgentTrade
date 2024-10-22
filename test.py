@@ -5,7 +5,7 @@ import undetected_chromedriver as uc
 from PIL import Image
 from io import BytesIO
 
-from App_trade import NewsModel, DatasetTimeseries, NewsDataset
+from App_web import NewsModel, DatasetTimeseries, NewsDataset
 
 # dataset = pd.read_csv("datasets_news/crypto_news_api.csv",
 #                                     parse_dates=["date"])
@@ -27,14 +27,21 @@ from App_trade import NewsModel, DatasetTimeseries, NewsDataset
 # print(news_df)
 # processor.get
 options = uc.ChromeOptions() 
+options.headless = True
 driver = uc.Chrome(use_subprocess=True, options=options) 
+
 def check_url(url):
     try:
-        driver.get(url) 
-        if driver.status_code == 200:
+        driver.get(f"http://{url}") 
+        status_code = driver.execute_script("return document.readyState")
+        driver.quit()
+        if status_code == "complete":
             return True
-    except:
+
+    except Exception as e:
         return False
+
+    return False
 
 dataset = pd.read_csv("datasets_news/crypto_news_api.csv",
                                      parse_dates=["date"])
@@ -50,20 +57,16 @@ domains = []
 domain_not_open = []
 
 for url in domain:
-    print(check_url(url), url)
     if not check_url(url):
         domain_not_open.append(url)
     else:
         domains.append(url)
-        print("1")
-exit()
 
 for url in domain2:
     if not check_url(url):
         domain_not_open.append(url)
     else:
         domains.append(url)
-        print("1")
 
 df = pd.DataFrame({"domain": domains})
 df.to_csv("datasets_news/domains.csv", index=False)

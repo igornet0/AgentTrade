@@ -1,19 +1,6 @@
 import pandas as pd
 import numpy as np
 
-from tensorflow.keras.models import Model
-
-class Test:
-    def __init__(self, dataset: pd.DataFrame, model: Model) -> None:
-        self.dataset = dataset
-
-        self.model = model
-
-    def process(self) -> None:
-        pass
-
-
-
 
 # Класс торгового агента
 class TradingAgent:

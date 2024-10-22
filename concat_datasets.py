@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from App_trade import Dataset
+from App_web import *
 
 def concat_datasets_files(path_to_folder: str, save: bool = False) -> dict[str:pd.DataFrame]:
     data = {}
@@ -10,7 +10,7 @@ def concat_datasets_files(path_to_folder: str, save: bool = False) -> dict[str:p
             continue
 
         path_to_launch = os.path.join(path_to_folder, launch)
-        dataset = Dataset(path_to_launch, save=False)
+        dataset = DatasetTimeseries(path_to_launch, save=False)
 
         file = dataset.get_filename()
 

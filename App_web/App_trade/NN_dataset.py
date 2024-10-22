@@ -7,30 +7,30 @@ from sklearn.preprocessing import MinMaxScaler
 from sktime import utils
 from sktime.forecasting.model_selection import temporal_train_test_split
 
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset as _Dataset, DataLoader
 from transformers import BertTokenizer
 import torch
 
+from typing import Union
 from os import listdir, mkdir, getcwd, path
 
 from .clear_datasets import *
 
-class DatasetTimeseries(Dataset):
-    def __init__(self, dataset: pd.DataFrame, timetravel: str = "5m",
-                 save : bool = True, 
-                 path_save: str = "datasets_clear", file_name: str = "clear_dataset.csv") -> None:
+
+class Dataset(_Dataset):
+
+    def __init__(self, dataset: Union[pd.DataFrame, str], save: bool = True, path_save: str = "datasets", 
+                 file_name: str = "clear_dataset.csv") -> None:
         
         if isinstance(dataset, str):
             file_name = self.searh_dateset(dataset)
             path_save = path.join(dataset, file_name)
-            dataset = pd.read_csv(path.join(dataset, file_name),
-                                    parse_dates=["datetime"])
+            dataset = pd.read_csv(path.join(dataset, file_name))
+
             if 'Unnamed: 0' in dataset.columns:
                 dataset.drop('Unnamed: 0', axis=1, inplace=True)
 
         self.dataset = dataset
-        self.timetravel = timetravel
-
         self.save = save
         self.path_save = path_save
         self.file_name = file_name
@@ -42,12 +42,53 @@ class DatasetTimeseries(Dataset):
             return path
         
         return [f for f in listdir(path) if f.endswith(".csv")][0]
+    
+    def get_dataset(self) -> pd.DataFrame:
+        return self.dataset
+    
+    def concat_dataset(self, dataset: pd.DataFrame) -> pd.DataFrame:
+        if isinstance(dataset, DatasetTimeseries):
+            dataset = dataset.dataset_clear()
+        else:
+            raise ValueError("Dataset must be DatasetTimeseries")
+
+        self.dataset = pd.concat([self.dataset_clear(), dataset], ignore_index=True)
+
+        self.process()
+
+        return self.dataset
+    
+    def save_dataset(self) -> None:
+        if not path.exists(self.path_save):
+            mkdir(self.path_save)
+
+        self.dataset.to_csv(path.join(self.path_save, self.file_name))
+
+
+class DatasetTimeseries(Dataset):
+    def __init__(self, dataset: pd.DataFrame, timetravel: str = "5m",
+                 save : bool = True, 
+                 path_save: str = "datasets_tine", file_name: str = "time_dataset.csv") -> None:
+        
+        super().__init__(dataset, save, path_save, file_name)
+
+        if "datetime" not in self.dataset.columns and "date" in self.dataset.columns:
+            self.dataset.rename(columns={"date": "datetime"}, inplace=True)
+
+        elif "datetime" not in self.dataset.columns and "date" not in self.dataset.columns:
+            raise ValueError("Columns 'datetime' and 'date' not found in dataset")
+        
+        self.dataset["datetime"] = pd.to_datetime(self.dataset["datetime"])
+            
+        self.timetravel = timetravel
 
     def process(self) -> None:
-        self.dataset = clear_dataset(self.dataset, sort=True)
+        self.dataset = clear_dataset(self.dataset, sort=True, timetravel=self.timetravel)
 
         if self.save:
             self.save_dataset()
+
+        return self.dataset
 
     def train_test_split(self, test_size: float = 30) -> None:
         data = self.get_dataset()
@@ -78,6 +119,7 @@ class DatasetTimeseries(Dataset):
 
         return self.train, self.test
 
+
     def plot_series(self, param: str = "close") -> None:
         plt.figure(figsize=(12, 8))
 
@@ -90,28 +132,6 @@ class DatasetTimeseries(Dataset):
 
         plt.show()
 
-    def save_dataset(self) -> None:
-        self.create_launch_dir()
-        self.dataset.to_csv(self.path_save, index=False)
-    
-    def create_launch_dir(self) -> None:
-        if self.path_save.endswith(".csv"):
-            return False
-
-        if not path.exists(self.path_save):
-            mkdir(self.path_save)
-
-        n = len([f for f in listdir(self.path_save) if f.startswith("launch")]) + 1
-
-        self.path_save = path.join(self.path_save, f"launch_{n}")
-        mkdir(self.path_save)
-
-        self.path_save = path.join(self.path_save, self.file_name)
-
-        return True
-
-    def get_dataset(self) -> pd.DataFrame:
-        return self.dataset
     
     def get_dataset_Nan(self) -> pd.DataFrame:
         return self.dataset.loc[self.dataset['open'] == "x"]
@@ -123,9 +143,11 @@ class DatasetTimeseries(Dataset):
         return self.dataset['datetime'].iloc[-1]
     
     def concat_dataset(self, dataset: pd.DataFrame) -> pd.DataFrame:
-        if isinstance(dataset, Dataset):
-            dataset = dataset.get_dataset()
-        
+        if isinstance(dataset, DatasetTimeseries):
+            dataset = dataset.dataset_clear()
+        else:
+            raise ValueError("Dataset must be DatasetTimeseries")
+
         self.dataset = pd.concat([self.dataset_clear(), dataset], ignore_index=True)
 
         self.process()

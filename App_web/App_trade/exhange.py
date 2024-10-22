@@ -22,6 +22,6 @@ class Exhange:
     
     def simulate(self, agent: TradingAgent, timeseries: DatasetTimeseries):
 
-        for 
+         
 
         coin, amount, price = agent.trade()

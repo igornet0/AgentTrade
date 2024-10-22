@@ -10,247 +10,42 @@
 </head>
 <body>
     <h1>Welcome, {{ username }}!</h1>
-    <form action="/logout" method="post">
-        <button type="submit" class="btn btn-secondary">Logout</button>
-    </form>
+    <h2>Agents</h2>
     <br>
-    <br>
-    <form action="/add_device" method="post">
-        <button type="submit" class="btn btn-primary">Add Device</button>
-    </form>
-    <br>
-    <div class="devices">
-        <h2>Devices</h2>
-        <ul class="device">
-        {% for device, sensors in data.items() %}
-            <li class="device-item" onclick="toggleMenu({{device.id}})">{{device.type}} {{device.name}}</li>
-            
-            <ul class="submenu" id={{device.id}}>
-                {% if device.connected %}
-                    {% for sensor in sensors %}
-                        <p>{{sensor.name}}</p>
-                        <p>{{sensor.value}}{{sensor.unit}}</p>
-                    {% endfor %}
-                    <br>
-                    {% if device.status_work %}
-                        <form action="/off" method="post">
-                            <input type="hidden" name="device_id" value="{{ device.id }}">
-                            <button class="btn btn-secondary"><span>Off</span></button>
-                        </form>
-                    {% else %}
-                        <form action="/on" method="post">
-                            <input type="hidden" name="device_id" value="{{ device.id }}">
-                            <button class="btn btn-primary"><span>On</span></button>
-                        </form>
-                {% endif %}
-                <form action="/disconnect" method="post">
-                    <input type="hidden" name="device_id" value="{{ device.id }}">
-                    <button class="btn btn-secondary"><span>Disconnect</span></button>
-                </form>
-                {% else %}
-                    <form action="/connect" method="post">
-                        <input type="hidden" name="device_id" value="{{ device.id }}">
-                        <button class="btn btn-primary"><span>Connect</span></button>
-                    </form>
-                {% endif %}
-                <form action="/delete_device" method="post">
-                    <input type="hidden" name="device_id" value="{{ device.id }}">
-                    <button class="btn btn-secondary"><span>Delete</span></button>
-                </form>
-                <input type="hidden" name="device_id" value="{{ device.id }}">
-                <button class="scheduleButton btn btn-primary" value="{{ device.id }}" data-toggle="modal" data-target="#scheduleModal"><span>Schedule</span></button>
-                <!-- Модальное окно -->
-                <div class="modal fade" id="scheduleModal" tabindex="-1" role="dialog" aria-labelledby="scheduleModalLabel" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="scheduleModalLabel">{{ device.type }} {{ device.name }}</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <!-- Сюда будем вставлять расписание или форму -->
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal" value="{{ device.id }}">Cancel</button>
-                                <button type="button" id="addButton" class="btn btn-primary" value="{{ device.id }}">Add</button>
-                                <button type="button" id="editButton" class="btn btn-primary d-none" value="{{ device.id }}">Edit</button>
-                                <button type="button" id="deleteButton" class="btn btn-danger d-none" value="{{ device.id }}">Delete</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </ul>
-            <br>
-        {% endfor %}
-        </ul>
-    </div>
-<div id="messageContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
-<script>
-    $(document).ready(function(a){
-        var editMode = false;
+    <button onclick="StartTrade()">Start Trade</button>
+    <button onclick="StartTrain()">Start Train</button>
+    <div id="tradeWidget">
+        <h3>Trade Information</h3>
+        <label for="URL">URL:</label>
+        <input type="text" id="url" name="url"><br><br>
         
-        $('#addButton').click(function(e) {
-            $('.modal-body').html(`
-                <form id="addForm">
-                    Time start: <input type="time" name="time_start"/><br/>
-                    Time end: <input type="time" name="time_end"/><br/>
-                    <br>
-                    <button id="saveButton" class="btn btn-primary" type="button">Safe</button>
-                    <button id="backButton" class="btn btn-secondary" type="button" onclick="closeForm">Back</button>
-                </form>
-            `);
-            $(".modal-footer").addClass('d-none');
-        });
-
-         // Делегирование события клика для кнопки "Сохранить"
-        $(document).on('click', '#saveButton', function(e) {
-            e.preventDefault();
-            var deviceId = $('#scheduleModal').data('device-id'); // Получаем сохраненный device ID
-            var formData = $('#addForm').find("input"); // Сериализация данных формы
-            $.ajax({
-                url: '/add-schedule',
-                type: 'POST',
-                data: {time_start: formData[0].value, 
-                    time_end: formData[1].value, 
-                    device_id: deviceId},
-                success: function(response) {
-                    if (!response.success) {
-                        alert('Error.');
-                    }
-                    closeForm(deviceId);
-                }
-            });
-        });
-
-        // Делегирование события клика для кнопки "Назад"
-        $(document).on('click', '#backButton', function(e) {
-            e.preventDefault();
-            var deviceId = $('#scheduleModal').data('device-id'); // Получаем сохраненный device ID
-            closeForm(deviceId); // Вызов функции закрытия формы
-        });
- 
-        $('#editButton').click(function() {
-            editMode = !editMode;
-            $('#deleteButton').toggleClass('d-none');
-            $('.modal-body').find('.schedule-item').each(function() {
-                if (editMode) {
-                    $(this).prepend('<input type="checkbox" class="edit-checkbox">');
-                } else {
-                    $(this).find('.edit-checkbox').remove();
-                }
-            });
-        });
- 
-        $('#deleteButton').click(function() {
-            var selectedId = $('.list-group-item.active').data('id');
-            $.ajax({
-                url: '/delete-schedule/' + selectedId,
-                type: 'POST',
-                success: function(response) {
-                    if (response.success) {
-                        $('.list-group-item.active').remove();
-                        $('#deleteButton').addClass('d-none');
-                        alert('Delete success!');
-                    }
-                }
-            });
-        });
-    });
-
-    function closeForm(deviceId) {
-        // Здесь логика для закрытия модального окна или очистки формы
-        $(".modal-footer").removeClass('d-none');
-        $('#deleteButton').addClass('d-none');
-        $('#editButton').addClass('d-none');
-        $.ajax({
-            url: '/get-schedule',
-            type: 'POST',
-            data: {device_id: deviceId},
-            success: function(data) {
-            if (!data.length) {
-                $('.modal-body').html('<p>Записей нет</p>');
-                return;
-            }
-            var scheduleHtml = '<ul class="list-group">';
-            data.forEach(function(item) {
-                scheduleHtml += `<li class="list-group-item" data-id="${item.id}">${item.time_on} - ${item.time_off}</li>`;
-            });
-            scheduleHtml += '</ul>';
-            $('.modal-body').html(scheduleHtml);
-            }
-        });
-    }
-    </script>
-    
-<script>
-   $(document).ready(function(){
-       $('#scheduleModal').on('show.bs.modal', function (e) {
-            var deviceId = $(e.relatedTarget).attr('value');
-            $('#scheduleModal').data('device-id', deviceId); 
-            $.ajax({
-                url: '/get-schedule',
-                type: 'POST',
-                data: {device_id: deviceId},
-                success: function(data) {
-                    if (!data.length) {
-                        $('.modal-body').html('<p>Schedule not found</p>');
-                        return;
-                    }
-                    var scheduleHtml = '<ul class="list-group">';
-                    data.forEach(function(item) {
-                        scheduleHtml += `<li class="list-group-item" data-id="${item.id}">${item.time_on} - ${item.time_off}</li>`;
-                    });
-                    scheduleHtml += '</ul>';
-                    $('.modal-body').html(scheduleHtml);
-                    $('#deleteButton').addClass('d-none');
-                    $('#editButton').addClass('d-none');
-                }
-            });
-        });
-
-        // Обработка выбора элемента списка
-        $('.modal-body').on('click', '.list-group-item', function() {
-            $('.list-group-item').removeClass('active');
-            $(this).addClass('active');
-            $('#deleteButton').removeClass('d-none');
-            $('#editButton').removeClass('d-none');
-        });
-    
-
-        // Удаление выбранного элемента
-        $('#deleteButton').click(function() {
-            var selectedId = $('.list-group-item.active').data('id');
-            // Здесь код для удаления элемента из базы данных через AJAX
-            console.log('Удаляем элемент с id:', selectedId);
-        });
-    });
-</script>
-<script>
-    function toggleMenu(menuId) {
-      var menu = document.getElementById(menuId);
-      console.log(menuId)
-      if (menu.style.display == "none" || menu.style.display == "") {
-        menu.style.display = "block";
-      } else {
-        menu.style.display = "none";
-      }
-    };
-    // Функция для показа уведомления
-    function showMessage(message, category) {
-        var alertType = category === 'error' ? 'alert-danger' : 'alert-success';
-        var html = '<div class="alert ' + alertType + ' alert-dismissible fade show" role="alert">' +
-                    message +
-                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-                    '<span aria-hidden="true">&times;</span>' +
-                    '</button></div>';
-        $('#messageContainer').append(html);
-    }
-
-    {% for message in get_flashed_messages(category_filter=["error", "success"]) %}
-        showMessage("{{ message }}", "{{ category }}");
-    {% endfor %}
-</script>
+        <label for="Agent">Agent:</label>
+        <input type="text" id="agent" name="agent"><br><br>
+        
+        <button onclick="submitTrade()">Submit</button>
+    </div>
+    <div id="trainWidget">
+        <h3>Traint Information</h3>
+        <label for="URL">URL:</label>
+        <input type="text" id="url" name="url"><br><br>
+        <button onclick="submitTrain()">Submit</button>
+    </div>
+    <br>
+    <br>
+    {% if data %}
+        {% for agent in data %}
+        <a href="/agent/{{ agent.id }}" style="color: azure;">{{ agent.name }}</a>
+        <br></br>
+        {% endfor %}
+    {% else %}
+        <h4>You have no agents</h4>
+        <button onclick="showInput()">Add agent</button>
+        <div id="inputDiv" style="display:none;">
+            <input type="number" id="agentInput" placeholder="Enter agent number">
+            <button onclick="addAgent()">Submit</button>
+        </div>
+    {% endif %}
+<div id="messageContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 </body>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </html>

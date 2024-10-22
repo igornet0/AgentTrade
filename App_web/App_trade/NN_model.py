@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
-import tensorflow as tf
+import torch
+from torch import nn
+
 import matplotlib.pyplot as plt
 
 from sktime.forecasting.ets import AutoETS
@@ -9,11 +11,10 @@ from sklearn.model_selection import train_test_split
 
 from .NN_GeneratorDataset import GeneratorDataset
 
-    
 
-class ModelTrade:
+class ModelTrade(nn.Module):
 
-    def __init__(self, input_shape: np.array, prediction_steps: int = 5, flag_lstm: bool = False, flag_save: bool = True) -> None:
+    def __init__(self, input_shape: np.array, prediction_steps: int = 5, flag_lstm: bool = False, flag_save: bool = True, name_model: str = None) -> None:
 
         self.flag_save = flag_save
 
@@ -25,7 +26,10 @@ class ModelTrade:
 
         self.model = self.create_model(input_shape, flag_lstm)
 
-    def get_model(self) -> tf.keras.Model:
+        self.name_model = name_model 
+        self.epoch = 0
+
+    def get_model(self) -> :
         return self.model
 
     def train(self, dataset: pd.DataFrame, test_size: float = 0.2,
@@ -75,11 +79,16 @@ class ModelTrade:
         loss = self.model.evaluate(dataset_test)
         print(f'Test Loss: {loss}')
 
-    def save(self, name_model: str = None):
-        if name_model:
-            self.name_model = name_model
-
-        self.model.save(f"{self.name_model}.keras")
+    def save(self,):
+        checkpoint = {
+            'epoch': self.epoch,  # Текущая эпоха (пригодится, если захотите продолжить обучение с места остановки)
+            'model_state_dict': self.state_dict(),  # Сохранение параметров модели
+            'optimizer_state_dict': self.optimizer.state_dict(),  # Сохранение состояния оптимизатора
+            'loss': self.buffer_loss,
+            'reward': self.buffer_reward
+        }
+        torch.save(checkpoint, f"{self.epoch}_{self.name_model}")  # Сохранение в файл
+        # print(f"Модель успешно сохранена на {self.name_model}")
 
     @staticmethod
     def plot_training_history(history):
@@ -99,56 +108,6 @@ class ModelTrade:
         plt.legend()
         plt.grid()
         plt.show()
-
-    def create_prediction_model(self, x):
-        # Входной слой для второй модели
-        second_model_input = tf.keras.layers.RepeatVector(self.prediction_steps)(x)
-
-        # Слои второй модели
-        y = tf.keras.layers.LSTM(32)(second_model_input)
-        y = tf.keras.layers.Dense(1)(y)  # Выходное значение для закрытия следующего ряда
-
-        # Генерация предсказаний
-        predictions = []
-        for _ in range(self.prediction_steps):
-            if len(predictions) > 0:
-                # Если это не первое предсказание, добавляем предсказанное значение в входные данные
-                new_input = tf.keras.layers.Concatenate()([second_model_input, tf.keras.layers.Dense(1)(predictions[-1])])
-            else:
-                new_input = second_model_input
-            
-            y = tf.keras.layers.LSTM(32)(new_input)
-            pred = tf.keras.layers.Dense(1)(y)
-            predictions.append(pred)
-        
-        return predictions
-
-    def create_model(self):
-
-        input_layer = tf.keras.layers.Input(shape=(self.time_steps, self.features))
-
-        # Слои первой модели
-        x = tf.keras.layers.LSTM(64, return_sequences=True)(input_layer)
-        x = tf.keras.layers.LSTM(32)(x)
-
-        # Слои второй модели
-        predictions_price = self.create_prediction_model(x)
-        predictions_news = self.create_news_model(x)
-
-        # Объединяем все предсказания в одном тензоре
-        predictions_output_price = tf.keras.layers.Concatenate(axis=1)(predictions_price)
-        predictions_output_news = tf.keras.layers.Concatenate(axis=1)(predictions_news)
-
-        # Обработка выходных данных первой модели
-        combined_output = tf.keras.layers.Concatenate()([x, predictions_output_price, predictions_output_news, input_layer[-1]])
-
-        # Финальные слои для классификации [buy, sell, hold]
-        final_output = tf.keras.layers.Dense(self.output_size, activation='softmax')(combined_output)
-
-        # Создание модели
-        model = tf.keras.Model(inputs=input_layer, outputs=final_output)
-
-        return model
     
     @staticmethod
     def create_news_model(input_shape):
