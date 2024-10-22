@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<h2>Расписание работы прибора</h2>
+{% if schedules != [] %}
+    <table>
+        <tr>
+            <th>Название</th>
+            <th>Время включения</th>
+            <th>Время выключения</th>
+        </tr>
+            {% for schedule in schedules %}
+            <tr>
+                <td>{{ schedule.name }}</td>
+                <td>{{ schedule.time_on }}</td>
+                <td>{{ schedule.time_off }}</td>
+            </tr>
+            {% endfor %}
+    </table>
+{% else %}
+    <h3>Вы ещё не добавили расписание</h3>
+{% endif %}
+<br>
+<button onclick="addSchedule()">Добавить расписание</button>
+<button onclick="modifySchedule()">Изменить расписание</button>
+
+<script>
+function addSchedule() {
+    // JavaScript для добавления расписания
+}
+
+function modifySchedule() {
+    // JavaScript для изменения расписания
+}
+</script>
+</body>
+</html>

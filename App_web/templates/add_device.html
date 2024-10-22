@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Add a new device</h1>
+    <form action="/save_device" method="post">
+        <label for="device_type">Device Type:</label>
+        <select name="device_type" id="device_type">
+            {% for type in device_type %}
+            <option value="{{type}}">{{type}}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <br>
+        <label for="device_name">Device Name:</label>
+        <input type="text" id="device_name" name="device_name" required>
+        <br>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
