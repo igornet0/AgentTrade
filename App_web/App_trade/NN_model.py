@@ -9,8 +9,6 @@ from sktime.forecasting.ets import AutoETS
 
 from sklearn.model_selection import train_test_split
 
-from .NN_GeneratorDataset import GeneratorDataset
-
 
 class ModelTrade(nn.Module):
 
@@ -29,7 +27,7 @@ class ModelTrade(nn.Module):
         self.name_model = name_model 
         self.epoch = 0
 
-    def get_model(self) -> :
+    def get_model(self):
         return self.model
 
     def train(self, dataset: pd.DataFrame, test_size: float = 0.2,
@@ -58,7 +56,7 @@ class ModelTrade(nn.Module):
         # Оценка модели
         self.test()
 
-    def create_model(self, input_shape, flag_lstm: bool = False) -> tf.keras.Model:
+    def create_model(self, input_shape, flag_lstm: bool = False):
         if flag_lstm:
             self.model = self.create_lstm_model(input_shape)
             self.name_model = "lstm_model"

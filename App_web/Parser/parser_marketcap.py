@@ -16,7 +16,7 @@ class Parser_marketcap(Parser_api):
     def default_xpath_marketcap(self):
         self.add_xpath("coins", "//div/a/div/div/div/div/p")
 
-    def start(self, pages=99):
+    def start_parser(self, pages=99):
         data = pd.DataFrame(columns=self.xpath.keys())
 
         for _ in range(pages):

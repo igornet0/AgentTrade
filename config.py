@@ -51,7 +51,7 @@ app_config = {
 
 
 api_key = os.getenv('KUCOIN_API_KEY')
-api_secret = os.getenv('KUCOIN_API_SECRET') #2d852e8e-6991-4b10-ae0c-fef9a5e0e94b
+api_secret = os.getenv('KUCOIN_API_SECRET')
 api_passphrase = os.getenv('KUCOIN_API_PASSPHRASE')
 
 assert api_key and api_secret and api_passphrase 

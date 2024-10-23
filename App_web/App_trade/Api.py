@@ -27,5 +27,3 @@ class Api_model:
     
     def get_agents(self) -> list[TradingAgent]:
         return self.agents
-    
-    def start

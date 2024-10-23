@@ -21,8 +21,7 @@ class Parser_api:
                  save:bool = False, path_save="datasets", DEBUG=False, 
                  xpath_default:list = ["login", "password", "click_login", "frame", "filename", "timetravel"]) -> None:
         
-        options = uc.ChromeOptions() 
-        self.driver = uc.Chrome(use_subprocess=True, options=options) 
+        self.driver = uc.Chrome(use_subprocess=True)
 
         self.save = save
         self.file = None
@@ -42,20 +41,31 @@ class Parser_api:
 
         self.xpath_defaul_vxod = xpath_default
 
+        self.keypress_thread = threading.Thread(target=self.device.kb.listen_for_keypress, daemon=True)
+        self.keypress_thread.start()
 
-    def start_web(self, URL:str = None, window_size: tuple = (1100, 1000)):
+        self.pause_thread = threading.Thread(target=self.device.kb.pause, daemon=True)
+        self.pause_thread.start()
 
-        self.driver.set_window_size(*window_size)
+
+    def start_web(self, URL:str = None, show_browser: bool = True, window_size: tuple = (1100, 1000)):
+        options = uc.ChromeOptions() 
+
+        if show_browser:
+            self.driver.set_window_size(*window_size)
+        else:
+            options.add_argument("--headless")
+            self.driver.options = options
+
         self.driver.get(URL) 
         self.driver.switch_to.default_content()
 
+        if show_browser:
+            self.driver.set_window_size(*window_size)
+
         self.URL = URL
 
-        keypress_thread = threading.Thread(target=self.device.kb.listen_for_keypress, daemon=True)
-        keypress_thread.start()
-
-        pause_thread = threading.Thread(target=self.device.kb.pause, daemon=True)
-        pause_thread.start()
+        return self.driver
 
     def end_web(self):
         self.driver.close()

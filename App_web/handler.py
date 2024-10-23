@@ -1,5 +1,6 @@
 from .App_trade import *
 from .Parser import *
+from .App_kucoin import KuCoinAPI
 
 from datetime import datetime
 

@@ -16,7 +16,7 @@ class Parser_bcs(Parser_kucoin):
         self.add_xpath("click_login", "/html/body/div[1]/div[3]/div/div[2]/div/div[2]/div/form/div[3]/button[1]")
 
     
-    def default_xpath_bcs(self):
+    def default_xpath(self):
         self.add_xpath("frame", "/html/body/div[1]/div[3]/div[3]/div[2]/div/div/div[3]/div/div[1]/div[2]/div/div/div[2]/div/div/div[2]/iframe")
         self.add_xpath("filename", "/html/body/div[1]/div[3]/div[3]/div[2]/div/div/div[3]/div/div/div[2]/div/div/div[1]/div[1]/div/div/div/div/div[2]/label[1]/span/div/span")
 

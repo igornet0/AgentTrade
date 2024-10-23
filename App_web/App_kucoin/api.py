@@ -1,5 +1,5 @@
 import pandas as pd
-from urllib.parse import urlencode
+from datetime import datetime
 from kucoin.client import User, Trade, Market
 
 class KuCoinAPI:
@@ -21,8 +21,24 @@ class KuCoinAPI:
         //opening price "0.049", //closing price "0.058", //highest price "0.049", //lowest price "0.018", 
         //Transaction amount "0.000945" //Transaction volume
         """
-        data = self.market.get_kline(symbol, time)
+        if time[-1] == "m":
+            time = time.replace("m", "min")
+        elif time[-1] == "H":
+            time = time.replace("H", "hour")
+        elif time[-1] == "D":
+            time = time.replace("D", "day")
+        elif time[-1] == "W":
+            time = time.replace("W", "week")
+
+        data = self.market.get_kline(f"{symbol}-USDT", time)
 
         colums = ["date", "open", "high", "low", "close", "_", "volume"]
 
-        return pd.DataFrame(data, columns=colums)
+        df = pd.DataFrame(data, columns=colums).drop("_", axis=1)
+        df["date"] = df["date"].apply(lambda x: datetime.fromtimestamp(int(x)))
+        
+        df["date"] = pd.to_datetime(df['date'])
+        if "day" in time or "week" in time:
+            df["date"] = df["date"].dt.strftime('%Y-%m-%d')
+
+        return df

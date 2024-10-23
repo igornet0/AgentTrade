@@ -1,7 +1,7 @@
 from .Api import Parser_api
 import pandas as pd
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 
 RU_EN_timetravel = {"1Д":"1D", "4Ч":"4H", "1Ч":"1H", "5 минут":"5m", "15 минут":"15m"}
@@ -19,6 +19,7 @@ class Parser_kucoin(Parser_api):
 
         self.timetravel = None
 
+        self.default_xpath()
     
     def get_filename(self, default: str = "data") -> str:
         if not self.file is None:
@@ -187,7 +188,7 @@ class Parser_kucoin(Parser_api):
 
             time.sleep(1.3)
     
-    def parser(self, datetime_start: datetime = None, counter: int = 1, timetravel: str = "5m") -> pd.DataFrame:
+    def start_parser(self, datetime_start: datetime = None, counter: int = 1, timetravel: str = "5m") -> pd.DataFrame:
         self.start()
 
         timetravel_page = self.get_timetravel()
@@ -203,33 +204,32 @@ class Parser_kucoin(Parser_api):
         if not datetime_start is None:
             if not self.search_datetime(datetime_start):
                 raise ValueError("Datetime not found")
-            datetime_start = None
+            date = datetime_start - timedelta(seconds=timetravel_int[timetravel])
+        else:
+            date = self.get_element_datetime()
 
-        print(f"[INFO parser] Start parser")
-
+        print(f"[INFO parser] Start parser {date=}")
         time_start = time.time()
         for _ in range(counter):
-            if self.search_datetime(date):
-                    data_d = self.get_elements()
-                    if data_d["datetime"] != date:
-                        print("[ERROR] Datetime not match!")
-                        continue
 
-                    data.loc[len(data)] = data_d
-                    temp_colnan += 1
+            data_d = self.get_elements()
+            if data_d["datetime"] != date:
+                if self.search_datetime(date):
+                    data_d = self.get_elements()
                 else:
                     print(date, " -Not Found!")
+            else:
+                data.loc[len(data)] = data_d
 
-                temp_print_col_nan += 1
-                if temp_print_col_nan == 10:
-                    col_nan = len(df) - temp_colnan
-                    print(f"[INFO] {col_nan=}")
-                    temp_print_col_nan = 0
+            if not self.handler_loop():
+                break
 
-                if not self.handler_loop():
-                    break
+            date = date - timedelta(seconds=timetravel_int[timetravel])
+            self.device.cursor.move("left")
+        time_end = time.time()
 
-            data["datetime"] = pd.to_datetime(data['datetime'])
+        print(f"[INFO parser] {len(data)}/{counter} {round((time_end - time_start) / 60, 2)} min")
+        return self.finally_parser(data, counter)
 
 
     def restart(self):
@@ -238,14 +238,13 @@ class Parser_kucoin(Parser_api):
             self.entry(self.login, self.password)
 
     
-
     def login_xpath(self):
         self.add_xpath("login", "/html/body/div[1]/div[3]/div/div[2]/div/div[2]/div/form/div[1]/div/div/input")
         self.add_xpath("password", "/html/body/div[1]/div[3]/div/div[2]/div/div[2]/div/form/div[2]/div/div/input")
         self.add_xpath("click_login", "/html/body/div[1]/div[3]/div/div[2]/div/div[2]/div/form/div[3]/button[1]")
 
 
-    def default_xpath_kucoin(self):
+    def default_xpath(self):
         self.add_xpath("filename", "//h1[contains(@class,'lrtcss-c7k6qm')]")
         self.add_xpath("timetravel", "//div[contains(@class,'dropdown-value lrtcss-1qeuv02')]")
 

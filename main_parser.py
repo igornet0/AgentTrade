@@ -20,7 +20,7 @@ def start_parser(URL: str, dataset = None, counter=10**6, save=False, tick=0):
 	
 	client_parser.set_save_trach("images_trach")
 	
-	client_parser.start_web(URL, entry=False)
+	client_parser.start_web(URL)
 
 	last_datetime = dataset.get_datetime_last() if dataset is not None else None
 
@@ -49,7 +49,7 @@ def start_parser_dataset_nan(URL: str, dataset, save=False, tick=0, client_parse
 	
 	client_parser.set_filename(dataset.get_filename())
 
-	client_parser.start_web(URL, entry=False)
+	client_parser.start_web(URL)
 
 	last_datetime, dataset_parser = client_parser.parser_for_df(dataset.get_dataset_Nan())
 
@@ -89,7 +89,6 @@ def parser_kucoin():
 	# data = get_data(data_path)
 
 	coin = input("Coin: ")
-	dataset = None
 
 	# if coin in data.keys():
 	#     dataset: Dataset = data.get(f"{coin}_USDT-5m.csv")
@@ -97,7 +96,16 @@ def parser_kucoin():
 	URL = f"https://www.kucoin.com/ru/trade/{coin}-USDT"
 	
 	counter = 100
-	start_parser(URL, dataset, save=True, counter=counter)
+	# parser = Parser_kucoin(save=False, path_save="datasets_parser")
+	# parser.start_web(URL)
+	# parser.start_parser(counter=counter)
+	kuc = KuCoinAPI(api_key, api_secret, api_passphrase)
+	time = ["5m", "1H", "4H", "1D"]
+	for t in time:
+		df = kuc.get_kline(coin, time=t)
+		df.to_csv(f"datasets_parser/{coin}_{t}.csv", index=False)
+		print(df.head(5))
+		
 
 def print_stat_nan(data_path: str):
 	data = get_data(data_path)
@@ -107,11 +115,11 @@ def print_stat_nan(data_path: str):
 def parser_marketcap():
 	URL = "https://coinmarketcap.com"
 
-	client = Parser_api(save=True, xpath_default=[], path_save="datasets_coins")
-	client.set_filename("coins.csv")
-	client.start_web(URL, entry=False)
+	parser = Parser_marketcap(save=True)
+	parser.set_filename("coins.csv")
+	parser.start_web(URL)
 
-	client.parser_marketcap()
+	parser.start_parser()
 
 def main(args):
     if args[1] == "kucoin":

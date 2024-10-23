@@ -12,13 +12,13 @@ months = {"Дек": 12, "Ноя": 11, "Окт": 10, "Сен": 9, "Авг": 8, "�
 def image_to_text(img: Image) -> str:
         bbox = img.getbbox()
         img = img.crop(bbox).convert('L')
-        img = Image.eval(img, lambda x: 255 - x)
-        threshold = 150        # Пороговое значение для бинаризации (настройте по необходимости)
-        img = img.point(lambda p: p > threshold and 255)  # Бинаризация
+        # img = Image.eval(img, lambda x: 255 - x)
+        # threshold = 150        # Пороговое значение для бинаризации (настройте по необходимости)
+        # img = img.point(lambda p: p > threshold and 255)  # Бинаризация
 
         # Распознавание текста с указанием параметров
-        text = pytesseract.image_to_string(img, config='--psm 6 --oem 3 -l rus')
-
+        # text = pytesseract.image_to_string(img, config='--psm 6 --oem 3 -l rus')
+        text = pytesseract.image_to_string(img, lang='rus')
         return text
 
 def first_format_date(date_str):
