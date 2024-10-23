@@ -6,7 +6,7 @@ import threading
 import pandas as pd
 from PIL import Image
 
-import time, base64
+import time, base64, json
 from io import BytesIO
 from datetime import datetime
 from shutil import rmtree
@@ -15,13 +15,15 @@ from os import mkdir, chdir, listdir, getcwd, path
 from .Device import Device
 from .datetime_process import *
 
+from .settings_news import ambcrypto_newslist, ambcrypto_news
+
 class Parser_api:
 
     def __init__(self, tick:int = 1, 
                  save:bool = False, path_save="datasets", DEBUG=False, 
                  xpath_default:list = ["login", "password", "click_login", "frame", "filename", "timetravel"]) -> None:
-        
-        self.driver = uc.Chrome(use_subprocess=True)
+
+        self.driver = None
 
         self.save = save
         self.file = None
@@ -51,24 +53,27 @@ class Parser_api:
     def start_web(self, URL:str = None, show_browser: bool = True, window_size: tuple = (1100, 1000)):
         options = uc.ChromeOptions() 
 
-        if show_browser:
-            self.driver.set_window_size(*window_size)
-        else:
+        if not show_browser:
             options.add_argument("--headless")
-            self.driver.options = options
+
+        self.driver = uc.Chrome(options=options, use_subprocess=True)
+
+        if show_browser:
+                    self.driver.set_window_size(*window_size)
 
         self.driver.get(URL) 
+        time.sleep(3)
+
         self.driver.switch_to.default_content()
 
-        if show_browser:
-            self.driver.set_window_size(*window_size)
+        
 
         self.URL = URL
 
         return self.driver
 
     def end_web(self):
-        self.driver.close()
+        self.driver.quit()
 
     def restart(self):
         self.end_web()
@@ -157,23 +162,33 @@ class Parser_api:
     def get_element_datetime(self):
         error_buffer = []
         while True:
-            try:
-                element = self.get_element(self.xpath["datetime"])
-                image_data = base64.b64decode(self.driver.execute_script('return arguments[0].toDataURL().substring(21);', element))
+            element = self.get_element(self.xpath["datetime"])
+            date, img = self.get_datatime(element)
 
-                img = Image.open(BytesIO(image_data))
-                text = image_to_text(img)
-                date = str_to_datatime(text)
+            if date:
                 return date
-
-            except Exception as e:
-                error_buffer.append(e)
-                if len(error_buffer) == 5:
+            else:
+                error_buffer.append(date)
+                if len(error_buffer) > 10:
                     if not self.path_trach is None:
                         img.save(path.join(self.path_trach, f"{len(listdir(self.path_trach)) + 1}_error.png"))
                     print(f"[ERROR get_element_datetime] {error_buffer[-1]}")
                     return False
-                time.sleep(2)
+                
+    def get_img(self, element):
+        image_data = base64.b64decode(self.driver.execute_script('return arguments[0].toDataURL().substring(21);', element))
+        img = Image.open(BytesIO(image_data))
+        return img
+
+    def get_datatime(self, element):
+        img = self.get_img(element)
+        try:
+            text = image_to_text(img)
+            date = str_to_datatime(text)
+            return date, img
+        except Exception:
+            return False, img
+        
 
     def handler_loop(self):
         if self.device.kb.get_stop_loop():
@@ -273,6 +288,67 @@ class Parser_api:
     def remove_launch_dir(self):
         chdir(self.main_dir)
         rmtree(self.path_save)
+
+    def rec_xpath(self, url):
+        self.start_web(url)    
+
+        xpath = {}
+
+        # Функция для получения XPath элемента
+        self.driver.execute_script("""
+            let xpathList = [];
+            let classNamesList = [];
+                                   
+            document.addEventListener('click', function(event) {
+                event.preventDefault();
+                let element = event.target;
+                let xpath = '';
+                let currentNode = element;
+
+                // Получаем название классов
+                let classNames = Array.from(element.classList).join(' ');
+
+                while (currentNode) {
+                    let name = currentNode.localName;
+                    let index = Array.from(currentNode.parentNode ? currentNode.parentNode.children : []).indexOf(currentNode) + 1;
+                    xpath = '/' + name + '[' + index + ']' + xpath;
+                    currentNode = currentNode.parentNode;
+                }
+
+                xpathList.push(xpath);
+                classNamesList.push(classNames);
+                console.log('XPath:', xpath);  // Выводим XPath в консоль
+                console.log('Class Names:', classNames);  // Выводим названия классов в консоль
+            });
+
+            window.getXpathList = function() { return xpathList; };  // Функция для получения списка
+            window.getclassNamesList = function() { return classNamesList; };
+        """)
+
+        print(f"[INFO rec_xpath] Start rec xpath")
+        while True:
+            time.sleep(0.5)
+
+            [xpath.setdefault(c, set()).add(x) for x, c in zip(self.driver.execute_script("return getXpathList()"), self.driver.execute_script("return getclassNamesList()"))]
+
+            if not self.handler_loop():
+                break
+
+        print(f"[INFO rec_xpath] End rec xpath")
+        print(xpath)
+
+        for key, value in xpath.items():
+            xpath[key] = list(value)
+
+        with open("xpath_rec.json", "w") as f:
+            json.dump(xpath, f)
+
+    def test(self, url):
+        news = ambcrypto_newslist(self, 1)
+        print(news)
+        ambcrypto_news(self, news)
+
+
 
     def __del__(self):
         self.end_web()

@@ -19,8 +19,9 @@ class KuCoinAPI:
         """
         "1545904980", //Start time of the candle cycle "0.058", 
         //opening price "0.049", //closing price "0.058", //highest price "0.049", //lowest price "0.018", 
-        //Transaction amount "0.000945" //Transaction volume
+        //Transaction amount "0.000945" //Transaction volume 143676
         """
+
         if time[-1] == "m":
             time = time.replace("m", "min")
         elif time[-1] == "H":
@@ -32,13 +33,13 @@ class KuCoinAPI:
 
         data = self.market.get_kline(f"{symbol}-USDT", time)
 
-        colums = ["date", "open", "high", "low", "close", "_", "volume"]
+        colums = ["datetime", "open", "high", "low", "close", "_", "volume"]
 
         df = pd.DataFrame(data, columns=colums).drop("_", axis=1)
-        df["date"] = df["date"].apply(lambda x: datetime.fromtimestamp(int(x)))
+        df["datetime"] = df["datetime"].apply(lambda x: datetime.fromtimestamp(int(x)))
         
-        df["date"] = pd.to_datetime(df['date'])
+        df["datetime"] = pd.to_datetime(df['date'])
         if "day" in time or "week" in time:
-            df["date"] = df["date"].dt.strftime('%Y-%m-%d')
+            df["datetime"] = df["datetime"].dt.strftime('%Y-%m-%d')
 
         return df

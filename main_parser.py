@@ -91,7 +91,7 @@ def parser_kucoin():
 	coin = input("Coin: ")
 
 	# if coin in data.keys():
-	#     dataset: Dataset = data.get(f"{coin}_USDT-5m.csv")
+	#	 dataset: Dataset = data.get(f"{coin}_USDT-5m.csv")
 
 	URL = f"https://www.kucoin.com/ru/trade/{coin}-USDT"
 	
@@ -121,21 +121,44 @@ def parser_marketcap():
 
 	parser.start_parser()
 
+
+def parser_news():
+	URL = "https://ambcrypto.com/category/new-news/"
+
+	parser = Parser_news([URL], save=False)
+	parser.set_filename("news.csv")
+	# parser.start_web(URL show_browser=False)
+
+	d = parser.start_parser()
+	print(d)
+
+def parser_rec_xpath(URL):
+	Parser_api().test(URL)
+
+	
 def main(args):
-    if args[1] == "kucoin":
-        if args[2] == "start":
-            parser_kucoin()
-    
-    elif args[1] == "market":
-        if args[2] == "start":
-            parser_marketcap()
+	
+	if args[1] == "kucoin":
+		if args[2] == "start":
+			parser_kucoin()
+	
+	if args[1] == "market":
+		if args[2] == "start":
+			parser_marketcap()
 
-    elif args[1] == "start_nan":
-        handler_dataset_nan(args[2])
+	if args[1] == "news":
+		if args[2] == "start":
+			parser_news()
 
-    elif args[1] == "print_nan":
-        print_stat_nan(args[2])
+	if args[1] == "start_nan":
+		handler_dataset_nan(args[2])
+
+	if args[1] == "print_nan":
+		print_stat_nan(args[2])
+
+	if args[1] == "rec":
+		parser_rec_xpath(args[2])
 
 
 if __name__ == "__main__":
-    main(argv)
+	main(argv)
