@@ -24,8 +24,7 @@ class Dataset(_Dataset):
         
         if isinstance(dataset, str):
             file_name = self.searh_dateset(dataset)
-            path_save = path.join(dataset, file_name)
-            dataset = pd.read_csv(path.join(dataset, file_name))
+            dataset = pd.read_csv(file_name)
 
             if 'Unnamed: 0' in dataset.columns:
                 dataset.drop('Unnamed: 0', axis=1, inplace=True)
@@ -41,7 +40,7 @@ class Dataset(_Dataset):
         if path.endswith(".csv"):
             return path
         
-        return [f for f in listdir(path) if f.endswith(".csv")][0]
+        return path.join(path, [f for f in listdir(path) if f.endswith(".csv")][0])
     
     def get_dataset(self) -> pd.DataFrame:
         return self.dataset

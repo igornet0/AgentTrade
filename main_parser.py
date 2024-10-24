@@ -123,19 +123,16 @@ def parser_marketcap():
 
 
 def parser_news():
-	URL = "https://ambcrypto.com/category/new-news/"
+	
+	domains = Dataset("datasets_news/domains.csv", save=False)
+	URLS = domains.get_dataset()["domain"].tolist()
 
-	parser = Parser_news([URL], save=False)
+	parser = Parser_news(URLS, save=True)
 	parser.set_filename("news.csv")
 	# parser.start_web(URL show_browser=False)
-
 	d = parser.start_parser()
 	print(d)
-
-def parser_rec_xpath(URL):
-	Parser_api().test(URL)
-
-	
+ 
 def main(args):
 	
 	if args[1] == "kucoin":

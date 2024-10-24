@@ -15,7 +15,7 @@ from os import mkdir, chdir, listdir, getcwd, path
 from .Device import Device
 from .datetime_process import *
 
-from .settings_news import ambcrypto_newslist, ambcrypto_news
+from .settings_news import *
 
 class Parser_api:
 
@@ -51,22 +51,18 @@ class Parser_api:
 
 
     def start_web(self, URL:str = None, show_browser: bool = True, window_size: tuple = (1100, 1000)):
-        options = uc.ChromeOptions() 
+        if self.driver is None:
+            options = uc.ChromeOptions() 
 
-        if not show_browser:
-            options.add_argument("--headless")
+            if not show_browser:
+                options.add_argument("--headless")
 
-        self.driver = uc.Chrome(options=options, use_subprocess=True)
-
-        if show_browser:
-                    self.driver.set_window_size(*window_size)
+            self.driver = uc.Chrome(options=options, use_subprocess=True)
 
         self.driver.get(URL) 
         time.sleep(3)
 
         self.driver.switch_to.default_content()
-
-        
 
         self.URL = URL
 
@@ -83,6 +79,20 @@ class Parser_api:
         frame = self.get_element(self.xpath_vxod["frame"], by=By.TAG_NAME)
         self.driver.switch_to.frame(frame) 
         return True
+    
+    def get(self, by=By.TAG_NAME, tag="a") -> list:
+        return self.driver.find_elements(by, tag)
+
+    def click(self, element):
+        element.click()
+        time.sleep(2)
+
+    def search_element(self, elements, text):
+        for element in elements:
+            if text and text in element.text.strip().replace("\n", "").lower():
+                return element
+            
+        return False
     
     def add_xpath(self, key:str, xpath:str):
         if key in self.xpath_defaul_vxod:
@@ -104,8 +114,7 @@ class Parser_api:
 
         return data_d
 
-    def set_save_trach(self, path:str):
-        self.path_trach = path
+    
     
     def get_element(self, xpath:str, by=By.XPATH, text=False, all=False):
         iter = 20
@@ -270,7 +279,10 @@ class Parser_api:
             return "_middle"
         else:
             return "_fast"
-    
+        
+    def set_save_trach(self, path:str):
+        self.path_trach = path
+
     def save_data(self, data):
         self.create_launch_dir()
         data.to_csv(path.join(self.path_save, self.file), index=False)
@@ -344,8 +356,10 @@ class Parser_api:
             json.dump(xpath, f)
 
     def test(self, url):
-        news = ambcrypto_newslist(self, 1)
-        ambcrypto_news(self, news)
+        # news = ambcrypto_newslist(self, 1)
+        news = cryptoslate_news(self, 1)
+        print(news)
+        # ambcrypto_news(self, news)
 
 
 

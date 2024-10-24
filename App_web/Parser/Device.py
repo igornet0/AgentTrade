@@ -89,6 +89,17 @@ class Keyboard:
         self.stop_loop = True
         return True
     
+    def create_lfk(self, key: str, message: str = ">>>"):
+        self.loop__ = False
+        print(message.format(key))
+        keyboard.wait(key)
+        print(f"[INFO] Press '{key}'")
+        self.loop__ = True
+        return True
+
+    def get_loop(self):
+        return self.loop__
+    
     def get_pause_loop(self):
         return self.pause_loop
     
