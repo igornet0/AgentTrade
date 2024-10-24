@@ -345,7 +345,6 @@ class Parser_api:
 
     def test(self, url):
         news = ambcrypto_newslist(self, 1)
-        print(news)
         ambcrypto_news(self, news)
 
 
