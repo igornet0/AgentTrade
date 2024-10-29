@@ -69,6 +69,7 @@ class Keyboard:
         self.tick = tick
         self.stop_loop = False
         self.pause_loop = False
+        self.loop__ = False
 
     def pause(self):
         while True:

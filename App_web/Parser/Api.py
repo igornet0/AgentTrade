@@ -355,13 +355,10 @@ class Parser_api:
         with open("xpath_rec.json", "w") as f:
             json.dump(xpath, f)
 
-    def test(self, url):
-        # news = ambcrypto_newslist(self, 1)
-        news = cryptoslate_news(self, 1)
-        print(news)
-        # ambcrypto_news(self, news)
-
 
 
     def __del__(self):
+        if self.driver is None:
+            return
+        
         self.end_web()

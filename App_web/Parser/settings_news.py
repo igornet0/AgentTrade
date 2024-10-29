@@ -38,14 +38,7 @@ URL_SETTINGS = {
         },
     "https://cryptoslate.com/crypto/":{
         "CAPTHA": True,
-        "next_page": "load more articles",
-        "news": {
-            "text_start": "title",
-            "text_end": ["source:"],
-            "text_continue": ["read"],
-            "img_continue": ["avatar"],
-            "date_format": "%B %d, %Y",
-            "filter_tags": ["h1", "h2", "p", "em", "span", "img"]
-            }
-        }    
+        "next_page": "next page",
+        "clear": True,
     }
+}

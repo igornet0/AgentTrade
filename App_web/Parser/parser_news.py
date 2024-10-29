@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 import pandas as pd
 
 from .Api import Parser_api
-import time, os, requests, threading
+import time, os, requests, threading, re
 from datetime import datetime
 
 from .settings_news import URL_SETTINGS, Img, PATH_DATASET
@@ -18,9 +18,24 @@ class Parser_news(Parser_api):
         self.urls = urls
         self.setting = None
 
+    def start_web(self, URL = None, show_browser = True, window_size = ...):
+        result = super().start_web(URL, show_browser, window_size)
+        
+        lfk = threading.Thread(target=self.device.kb.create_lfk, args=("s", "[INFO] For start press '{}'"), daemon=True,)
+        lfk.start()
+        
+        return result
+
     def load_settings(self, url: str):
         self.setting = URL_SETTINGS.get(url)
         return self.setting
+    
+    def clear_text(self, text: str):
+        cleaned = re.sub(r'b[A-Z]+s+d+s+[A-Z]+b', '', text)
+        # Удаляем лишние пробелы
+        cleaned = cleaned.strip()
+
+        return cleaned
     
     def url_getter(self, data: list,  urls = {}) -> dict[str, str]:
         for link in data:
@@ -28,6 +43,9 @@ class Parser_news(Parser_api):
             url = link.get_attribute("href")
             if text:
                 if len(text) > 30:
+                    if self.setting.get("clear", False):
+                        text = self.clear_text(text)
+                    print(text)
                     urls[text] = url
         
         return urls
@@ -112,7 +130,7 @@ class Parser_news(Parser_api):
     
     def captcha_solver(self):
         while True:
-            if not self.device.kb.get_loop():
+            if self.device.kb.get_loop():
                 break
         return True
             
@@ -141,14 +159,17 @@ class Parser_news(Parser_api):
             print(f"[INFO parser] {url} {len(news_urls)=}")
 
             settings_news = self.setting.get("news")
-
             if not settings_news:
-                return news_urls
+                data = pd.DataFrame(columns=[ "url", "title"])
             
             self.driver.quit()
             self.driver = None
 
             for title, url_news in news_urls.items():
+                if not settings_news:
+                    data.loc[len(data)] = [url_news, title]
+                    continue
+                    
                 if title in data["title"].values:
                     continue
 
