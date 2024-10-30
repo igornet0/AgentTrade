@@ -127,8 +127,8 @@ def parser_news():
 	domains = Dataset("datasets_news/domains.csv", save=False)
 	URLS = domains.get_dataset()["domain"].tolist()
 
-	parser = Parser_news(URLS, save=True)
-	parser.set_filename("news.csv")
+	parser = Parser_news(URLS, save=False)
+	# parser.set_filename("news.csv")
 	# parser.start_web(URL show_browser=False)
 	d = parser.start_parser()
 	print(d)
@@ -153,8 +153,8 @@ def main(args):
 	if args[1] == "print_nan":
 		print_stat_nan(args[2])
 
-	if args[1] == "rec":
-		parser_rec_xpath(args[2])
+	# if args[1] == "rec":
+	# 	parser_rec_xpath(args[2])
 
 
 if __name__ == "__main__":
