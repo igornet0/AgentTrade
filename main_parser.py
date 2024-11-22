@@ -88,25 +88,25 @@ def parser_kucoin():
 	# data_path = "datasets_clear"
 	# data = get_data(data_path)
 
-	coin = input("Coin: ")
+	# coin = input("Coin: ")
 
 	# if coin in data.keys():
 	#	 dataset: Dataset = data.get(f"{coin}_USDT-5m.csv")
 
-	URL = f"https://www.kucoin.com/ru/trade/{coin}-USDT"
+	# URL = f"https://www.kucoin.com/ru/trade/{coin}-USDT"
 	
-	counter = 100
+	# counter = 100
 	# parser = Parser_kucoin(save=False, path_save="datasets_parser")
 	# parser.start_web(URL)
 	# parser.start_parser(counter=counter)
-	kuc = KuCoinAPI(api_key, api_secret, api_passphrase)
-	time = ["5m", "1H", "4H", "1D"]
-	for t in time:
-		df = kuc.get_kline(coin, time=t)
-		df.to_csv(f"datasets_parser/{coin}_{t}.csv", index=False)
-		print(df.head(5))
-		
+	coins_ds = Dataset("datasets_coins/coins_ds.csv", save=False)
 
+	loger = Loger()
+	kuc = KuCoinAPI(api_key, api_secret, api_passphrase, logger=loger)
+
+	timetravel = ["5m", "1H", "4H", "1D"]
+	kuc.parser_coins(coins_ds, timetravel)
+			
 def print_stat_nan(data_path: str):
 	data = get_data(data_path)
 	Stat.print_nan(list(data.values()))
@@ -127,11 +127,13 @@ def parser_news():
 	domains = Dataset("datasets_news/domains.csv", save=False)
 	URLS = domains.get_dataset()["domain"].tolist()
 
-	parser = Parser_news(URLS, save=False)
+	parser = Parser_news(save=False)
 	# parser.set_filename("news.csv")
 	# parser.start_web(URL show_browser=False)
-	d = parser.start_parser()
-	print(d)
+	for url in URLS:
+		log["INFO"](f"news {url}")
+		d = parser.start_parser(url)
+		log["INFO"](f"news {url} {d}")
  
 def main(args):
 	

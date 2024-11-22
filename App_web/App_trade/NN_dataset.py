@@ -12,62 +12,103 @@ from transformers import BertTokenizer
 import torch
 
 from typing import Union
-from os import listdir, mkdir, getcwd, path
+from os import walk, mkdir, getcwd, path
 
 from .clear_datasets import *
 
 
 class Dataset(_Dataset):
 
+    main_dir = getcwd()
+
     def __init__(self, dataset: Union[pd.DataFrame, str], save: bool = True, path_save: str = "datasets", 
                  file_name: str = "clear_dataset.csv") -> None:
         
         if isinstance(dataset, str):
             file_name = self.searh_dateset(dataset)
+            path_save = path.dirname(file_name)
             dataset = pd.read_csv(file_name)
-
             if 'Unnamed: 0' in dataset.columns:
                 dataset.drop('Unnamed: 0', axis=1, inplace=True)
+
+            if "date" in dataset.columns:
+                dataset.rename(columns={"date": "datetime"}, inplace=True)
+
+            if "datetime" in dataset.columns:
+                dataset["datetime"] = pd.to_datetime(dataset["datetime"])
 
         self.dataset = dataset
         self.save = save
         self.path_save = path_save
         self.file_name = file_name
-        self.main_dir = getcwd()
+
+    def get_datetime_last(self) -> datetime:
+        return self.dataset['datetime'].iloc[-1]
 
     @classmethod
-    def searh_dateset(cls, path: str) -> str:
-        if path.endswith(".csv"):
-            return path
+    def searh_dateset(cls, path_searh: str) -> str:
+        if path_searh.endswith(".csv"):
+            return path_searh
         
-        return path.join(path, [f for f in listdir(path) if f.endswith(".csv")][0])
+        for root, _, files in walk(path_searh):
+            for file in files:
+                if file.endswith(".csv"):
+                    return path.join(root, file)
     
     def get_dataset(self) -> pd.DataFrame:
         return self.dataset
     
-    def concat_dataset(self, dataset: pd.DataFrame) -> pd.DataFrame:
+    def concat_dataset(self, dataset: pd.DataFrame, sort: bool = True) -> pd.DataFrame:
         if isinstance(dataset, DatasetTimeseries):
             dataset = dataset.dataset_clear()
-        else:
-            raise ValueError("Dataset must be DatasetTimeseries")
+        elif isinstance(dataset, Dataset):
+            dataset = dataset.get_dataset()
+        elif not isinstance(dataset, pd.DataFrame):
+            raise ValueError("Dataset must be DatasetTimeseries or Dataset or pd.DataFrame")
 
-        self.dataset = pd.concat([self.dataset_clear(), dataset], ignore_index=True)
+        self.dataset = pd.concat([self.get_dataset(), dataset], ignore_index=True)
 
-        self.process()
+        self.dataset = self.dataset.drop_duplicates(subset=['datetime'])
 
-        return self.dataset
+        if sort:
+            self.dataset = self.dataset.sort_values('datetime', ignore_index=True)
+
+        return self
     
-    def save_dataset(self) -> None:
+    def set_dataset(self, dataset: pd.DataFrame) -> None:
+        if isinstance(dataset, Dataset):
+            dataset = dataset.get_dataset()
+        elif not isinstance(dataset, pd.DataFrame):
+            raise ValueError("Dataset must be DatasetTimeseries or Dataset or pd.DataFrame")
+        
+        self.dataset = dataset
+
+    def save_dataset(self, name_file: str = None) -> None:
         if not path.exists(self.path_save):
             mkdir(self.path_save)
 
-        self.dataset.to_csv(path.join(self.path_save, self.file_name))
+        if name_file is None:
+            name_file = self.file_name
 
+        if path.exists(path.join(self.path_save, name_file)):
+            dataset = Dataset(path.join(self.path_save, name_file), save=False)
+            self.concat_dataset(dataset)
+
+        self.dataset.to_csv(path.join(self.path_save, name_file))
+
+    def get_filename(self) -> str:
+        return self.file_name
+
+    def __getitem__(self, date):
+        pass
+
+    def __len__(self):
+        return len(self.dataset)
 
 class DatasetTimeseries(Dataset):
     def __init__(self, dataset: pd.DataFrame, timetravel: str = "5m",
                  save : bool = True, 
-                 path_save: str = "datasets_tine", file_name: str = "time_dataset.csv") -> None:
+                 path_save: str = "datasets_time", file_name: str = "time_dataset.csv") -> None:
         
         super().__init__(dataset, save, path_save, file_name)
 
@@ -124,7 +165,6 @@ class DatasetTimeseries(Dataset):
 
         y = self.dataset[param]
 
-
         utils.plot_series(y)
         plt.title(param)
         plt.tick_params(axis='both', which='major', labelsize=14)
@@ -137,32 +177,6 @@ class DatasetTimeseries(Dataset):
     
     def dataset_clear(self) -> pd.DataFrame:
         return self.dataset.loc[self.dataset['open'] != "x"]
-    
-    def get_datetime_last(self) -> datetime:
-        return self.dataset['datetime'].iloc[-1]
-    
-    def concat_dataset(self, dataset: pd.DataFrame) -> pd.DataFrame:
-        if isinstance(dataset, DatasetTimeseries):
-            dataset = dataset.dataset_clear()
-        else:
-            raise ValueError("Dataset must be DatasetTimeseries")
-
-        self.dataset = pd.concat([self.dataset_clear(), dataset], ignore_index=True)
-
-        self.process()
-
-        return self.dataset
-    
-    def get_filename(self) -> str:
-        return self.file_name
-
-
-    def __getitem__(self, date):
-        pass
-
-
-    def __len__(self):
-        return len(self.dataset)
 
 
 class NewsDataset(Dataset):

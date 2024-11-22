@@ -12,6 +12,7 @@ dotenv.load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 URL_BOT = os.environ.get("URL_BOT")
+
 if os.environ.get("ADMIN"):
     ADMINS_ID = list(map(int, [os.environ.get("ADMIN")]))
 

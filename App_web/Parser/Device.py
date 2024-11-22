@@ -1,22 +1,26 @@
 import pyautogui, keyboard
 import time
 
+from ..Log import Loger
+
 class Cursor:
 
-    def __init__(self, tick=0.1):
+    def __init__(self, tick=0.1, logger=None):
         self.tick = tick
         self.position_cursor = {"start": None}
         self.scroll_direction = 0
+
+        self.logger = logger if logger else Loger().off
 
 
     def set_position(self, types: list = ["start",]):
         for type in types:
             for try_pos in range(3):
                 time.sleep(self.tick+3)
-                print(f"[INFO POSITION {try_pos}] {type=} Porsition cursor = {self.get_position_now()}")
+                self.logger["INFO"](f"{try_pos}/3 {type=} Porsition cursor = {self.get_position_now()}")
             
             self.position_cursor[type] = self.get_position_now()
-            print(f"[INFO SET POSITION] {type=} {self.position_cursor[type]=}")
+            self.logger["INFO"](f"{type=} {self.position_cursor[type]=}")
 
 
     def add_position(self, type):
@@ -41,7 +45,10 @@ class Cursor:
 
 
     def scroll(self, direction: int):
-        pyautogui.scroll(direction)
+        for _ in range(abs(direction//100)):
+            pyautogui.scroll(direction//10)
+            time.sleep(self.tick)
+        
         self.scroll_direction += direction 
 
 
@@ -65,36 +72,39 @@ class Cursor:
 
 class Keyboard:
 
-    def __init__(self, tick=0.1):
+    def __init__(self, tick=0.1, logger=None):
         self.tick = tick
         self.stop_loop = False
         self.pause_loop = False
         self.loop__ = False
 
+        self.logger = logger if logger else Loger().off
+
     def pause(self):
         while True:
-            self.pause_loop = False
-            print("[INFO] For pause press 'p'")
+            if not self.pause_loop:
+                self.logger["INFO"]("For pause press 'p'")
+            else:
+                self.logger["INFO"]("For un pause press 'p'")
+
             keyboard.wait('p')
-            self.pause_loop = True
-            print("[INFO] Press 'p'")
-            print("[INFO] For un pause press 'p'")
-            keyboard.wait('p')
-            print("[INFO] Press un 'p'")
+            self.pause_loop = not self.pause_loop
+            self.logger["INFO"]("[INFO] Press 'p'")
+
 
     def listen_for_keypress(self):
         self.stop_loop = False
-        print("[INFO] For stop press 'q'")
+        self.logger["INFO"]("For stop press 'q'")
         keyboard.wait('q')
-        print("[INFO] Press 'q'")
+        self.logger["INFO"]("Press 'q'")
         self.stop_loop = True
         return True
     
     def create_lfk(self, key: str, message: str = ">>>"):
         self.loop__ = False
-        print(message.format(key))
+        self.logger["INFO"](message.format(key))
         keyboard.wait(key)
-        print(f"[INFO] Press '{key}'")
+        self.logger["INFO"](f"Press '{key}'")
         self.loop__ = True
         return True
 
@@ -112,6 +122,6 @@ class Keyboard:
 
 class Device:
 
-    def __init__(self, tick=0.1):
-        self.cursor = Cursor(tick)
-        self.kb = Keyboard(tick)
+    def __init__(self, tick=0.1, logger=None):
+        self.cursor = Cursor(tick, logger)
+        self.kb = Keyboard(tick, logger)

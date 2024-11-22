@@ -3,8 +3,8 @@ import pandas as pd
 
 class Parser_marketcap(Parser_api):
 
-    def __init__(self, tick = 1, save = False, path_save="datasets_coins", DEBUG=False):
-        super().__init__(tick, save, path_save, DEBUG)
+    def __init__(self, tick = 1, save = False, path_save="datasets_coins", logger=None):
+        super().__init__(tick=tick, save=save, path_save=path_save, logger=logger, xpath_default=[])
 
         self.xpath_defaul_vxod = []
         self.page = 1

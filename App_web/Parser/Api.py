@@ -20,7 +20,7 @@ from .settings_news import *
 class Parser_api:
 
     def __init__(self, tick:int = 1, 
-                 save:bool = False, path_save="datasets", DEBUG=False, 
+                 save:bool = False, path_save="datasets", logger=False, 
                  xpath_default:list = ["login", "password", "click_login", "frame", "filename", "timetravel"]) -> None:
 
         self.driver = None
@@ -36,10 +36,10 @@ class Parser_api:
         self.xpath = {}
         self.xpath_vxod = {}
 
-        self.device = Device(tick=self.tick)
+        self.device = Device(tick=self.tick, logger=logger)
         self.buffer_date = []
 
-        self.DEBUG = DEBUG
+        self.logger = logger
 
         self.xpath_defaul_vxod = xpath_default
 
@@ -58,6 +58,9 @@ class Parser_api:
                 options.add_argument("--headless")
 
             self.driver = uc.Chrome(options=options, use_subprocess=True)
+
+        if self.logger:
+            self.logger["INFO"](f"Start web {URL}")
 
         self.driver.get(URL) 
         time.sleep(3)
@@ -126,6 +129,9 @@ class Parser_api:
                     element = self.driver.find_element(by, xpath)
 
                 if element is None:
+                    if self.logger:
+                        self.logger["ERROR"](f"element {xpath} is None")
+                        
                     raise ValueError(f"element {xpath} is None")
 
                 if text:
@@ -143,7 +149,8 @@ class Parser_api:
                 iter -= 1
                 time.sleep(self.tick)
                 if iter == 0:
-                    print(f"[ERROR get_element] {e}")
+                    if self.logger:
+                        self.logger["ERROR"](f"{e}")
                     break
 
     def set_filename(self, filename: str):
@@ -157,14 +164,16 @@ class Parser_api:
     
     def finally_parser(self, data: pd.DataFrame, counter: int = 1):
         if len(data) != counter:
-                print(f"[INFO parser] {len(data)}/{counter}")
+            if self.logger:
+                self.logger["INFO"](f"{len(data)}/{counter}")
             
         if len(data) == 0:
             return (None, None)
         
         datetime_last = data['datetime'].min()
-        print(f"[INFO parser] Last datetime = {datetime_last}")
-        print(f"[INFO parser] End parser")
+        if self.logger:
+            self.logger["INFO"](f"Last datetime = {datetime_last}")
+            self.logger["INFO"]("End parser")
 
         return (datetime_last, self.save_data(data)) if self.save else (datetime_last, data)
 
@@ -181,7 +190,9 @@ class Parser_api:
                 if len(error_buffer) > 10:
                     if not self.path_trach is None:
                         img.save(path.join(self.path_trach, f"{len(listdir(self.path_trach)) + 1}_error.png"))
-                    print(f"[ERROR get_element_datetime] {error_buffer[-1]}")
+
+                    if self.logger:
+                        self.logger["ERROR"](f"{error_buffer[-1]}")
                     return False
                 
     def get_img(self, element):
@@ -201,11 +212,13 @@ class Parser_api:
 
     def handler_loop(self):
         if self.device.kb.get_stop_loop():
-            print(f"[INFO parser] Stop parser by keypress")
+            if self.logger:
+                self.logger["INFO"]("Stop parser by keypress")
             return False
             
         if self.device.kb.get_pause_loop():
-            print(f"[INFO parser] Pause parser by keypress")
+            if self.logger:
+                self.logger["INFO"]("Pause parser by keypress")
             while self.device.kb.get_pause_loop():
                 time.sleep(5)
             return True
@@ -214,8 +227,11 @@ class Parser_api:
 
     def search_datetime(self, target_datetime: datetime, right_break: bool = False, ) -> bool:
         buffer_life = 3
+        if self.logger:
+            print = self.logger["INFO"]
 
-        print(f"[INFO search_datetime] start search {target_datetime}")
+        print(f"start search {target_datetime}")
+
         self.device.cursor.scroll_to_start()
         while True:
 
@@ -232,18 +248,18 @@ class Parser_api:
             delta = abs((target_datetime - date).total_seconds())
 
             if delta == 0:
-                print(f"[INFO search_datetime] datetime {target_datetime} found")
+                print(f"datetime {target_datetime} found")
                 self.buffer_date = []
                 return True
             
             if self.should_clear_buffer():
                 date = self.buffer_date[-1]
                 buffer_life -= 1
-                print("[INFO search_datetime] clear buffer")
+                print("clear buffer")
                 if buffer_life == 0:
                     self.device.cursor.scroll(-25)
-                    print(f"[INFO search_datetime] datetime {target_datetime} not found")
-                    print(f"[INFO search_datetime] {self.buffer_date=}")
+                    print(f"datetime {target_datetime} not found")
+                    print(f"{self.buffer_date=}")
                     return False
                 
                 self.buffer_date = []
@@ -337,7 +353,8 @@ class Parser_api:
             window.getclassNamesList = function() { return classNamesList; };
         """)
 
-        print(f"[INFO rec_xpath] Start rec xpath")
+        if self.logger:
+            self.logger["INFO"]("Start rec xpath")
         while True:
             time.sleep(0.5)
 
@@ -346,8 +363,9 @@ class Parser_api:
             if not self.handler_loop():
                 break
 
-        print(f"[INFO rec_xpath] End rec xpath")
-        print(xpath)
+        if self.logger:
+            self.logger["INFO"]("End rec xpath")
+            self.logger["INFO"](f"{xpath}")
 
         for key, value in xpath.items():
             xpath[key] = list(value)

@@ -9,10 +9,10 @@ timetravel_int = {"1D":24*3600, "4H":4*3600, "1H":1*3600, "5m":5*60, "15m":15*60
 
 class Parser_kucoin(Parser_api):
 
-    def __init__(self, tick = 1, save = False, path_save="datasets", DEBUG=False, 
+    def __init__(self, tick = 1, save = False, path_save="datasets", logger=None, 
                  xpath_default=["login", "password", "click_login", "frame", "filename", "timetravel"]):
         
-        super().__init__(tick, save, path_save, DEBUG, xpath_default)
+        super().__init__(tick=tick, save=save, path_save=path_save, logger=logger, xpath_default=xpath_default)
 
         self.login = None
         self.password = None
