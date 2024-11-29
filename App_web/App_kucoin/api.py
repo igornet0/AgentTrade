@@ -33,13 +33,13 @@ class KuCoinAPI:
     def get_account_summary_info(self):
         return self.user.get_account_summary_info()
     
-    def get_kline(self, symbol, time: str = "5m"):
+    def get_kline(self, symbol, time: str = "5m") -> pd.DataFrame: 
         """
         "1545904980", //Start time of the candle cycle "0.058", 
         //opening price "0.049", //closing price "0.058", //highest price "0.049", //lowest price "0.018", 
         //Transaction amount "0.000945" //Transaction volume 143676
         """
-
+        
         if time[-1] == "m":
             time = time.replace("m", "min")
         elif time[-1] == "H":

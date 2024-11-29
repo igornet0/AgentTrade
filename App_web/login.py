@@ -22,4 +22,4 @@ def login():
 @bp.route("/logout", methods=['POST'])
 def logout():
     logout_user()
-    return render_template('login.html')
+    return redirect(url_for('main.home'))

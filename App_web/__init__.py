@@ -1,6 +1,6 @@
 from .handler import *
 
-from flask import Flask, g
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from config import app_config, Config
@@ -20,20 +20,17 @@ if not DEBUG:
     log = log.off
 
 
-def create_app(init_pd=None):
+def create_app():
     
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    from .models import User, Portfolio, Transaction, Order, Agent  
+    from .models import User, Stock, Transaction, StockHistory, Agent, AgentList, News
 
     db.init_app(app)
     with app.app_context():
-        if init_pd is not None:
-            g.datasets = init_pd()
-            log["INFO"]("Datasets loaded")
-
         db.create_all()
+        log["INFO"]("Datasets loaded")
 
     login_manager.init_app(app)
 
@@ -46,6 +43,8 @@ def create_app(init_pd=None):
     app.register_blueprint(login_router, url_prefix='/login')
     app.register_blueprint(register_router, url_prefix='/register')
     app.register_blueprint(agent_router, url_prefix='/agent')
+    
+    login_manager.login_view = "login.login"
 
     log["INFO"]("Flask app created")
 

@@ -22,20 +22,23 @@ class Dataset(_Dataset):
     main_dir = getcwd()
 
     def __init__(self, dataset: Union[pd.DataFrame, str], save: bool = True, path_save: str = "datasets", 
-                 file_name: str = "clear_dataset.csv") -> None:
+                 file_name: str = "clear_dataset.csv", search: bool = True) -> None:
         
-        if isinstance(dataset, str):
-            file_name = self.searh_dateset(dataset)
-            path_save = path.dirname(file_name)
-            dataset = pd.read_csv(file_name)
-            if 'Unnamed: 0' in dataset.columns:
-                dataset.drop('Unnamed: 0', axis=1, inplace=True)
+        if not isinstance(dataset, pd.DataFrame):
+            if search:
+                dataset = self.searh_dateset(dataset)
+                path_save = path.dirname(dataset)
+                
+            dataset = pd.read_csv(dataset)
 
-            if "date" in dataset.columns:
-                dataset.rename(columns={"date": "datetime"}, inplace=True)
+        if 'Unnamed: 0' in dataset.columns:
+            dataset.drop('Unnamed: 0', axis=1, inplace=True)
 
-            if "datetime" in dataset.columns:
-                dataset["datetime"] = pd.to_datetime(dataset["datetime"])
+        if "date" in dataset.columns:
+            dataset.rename(columns={"date": "datetime"}, inplace=True)
+
+        if "datetime" in dataset.columns:
+            dataset["datetime"] = pd.to_datetime(dataset["datetime"])
 
         self.dataset = dataset
         self.save = save

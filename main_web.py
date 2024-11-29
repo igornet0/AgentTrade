@@ -9,7 +9,7 @@ def inint_pd():
 
     return dataset_coins, dataset_news_urls
 
-app = create_app(inint_pd)
+app = create_app()
 
 if __name__ == '__main__':
     app.run(debug=True)

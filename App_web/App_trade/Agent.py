@@ -1,4 +1,6 @@
 import numpy as np
+import os 
+
 from .NN_model import ModelTrade
 
 class TradingAgent:
@@ -15,4 +17,4 @@ class TradingAgent:
         return action
     
     def save(self, name_model: str = None):
-        self.model.save(name_model)
+        self.model.save(os.path.join(self.path_agent, name_model))

@@ -11,14 +11,24 @@
 <body>
     <h1>Welcome, {{ username }}!</h1>
     <h2>Agents</h2>
-    <br>
+    <form action="/login/logout" method="post">
+        <button type="submit">Exit</button>
+    </form>
+    <br><br>
     <button onclick="StartTrade()">Start Trade</button>
     <button onclick="StartTrain()">Start Train</button>
+    <button onclick="StartParser()">Start Parser</button>
+    <br><br>
+    <button id="uploadButton">Upload File</button>
+    <input type="file" id="fileInput" style="display: none;">
+    <form id="fileForm" action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" id="fileField" name="file">
+        <button type="submit">Submit</button>
+    </form>
     <div id="tradeWidget">
         <h3>Trade Information</h3>
         <label for="URL">URL:</label>
         <input type="text" id="url" name="url"><br><br>
-        
         <label for="Agent">Agent:</label>
         <input type="text" id="agent" name="agent"><br><br>
         
@@ -30,22 +40,121 @@
         <input type="text" id="url" name="url"><br><br>
         <button onclick="submitTrain()">Submit</button>
     </div>
+    <form action="/start_parser" method="post" enctype="multipart/form-data" id="parserWidget">
+        <h3>Parser Information</h3>
+        <label for="URL">URL:</label>
+        <input type="text" id="url" name="url"><br><br>
+        <button type="submit">Submit</button>
+    </form>
+    </div>
     <br>
     <br>
     {% if data %}
         {% for agent in data %}
-        <a href="/agent/{{ agent.id }}" style="color: azure;">{{ agent.name }}</a>
+        <a href="/agent/{{ agent.id }}" style="color: black;">{{ agent.name }}</a>
         <br></br>
         {% endfor %}
     {% else %}
         <h4>You have no agents</h4>
         <button onclick="showInput()">Add agent</button>
         <div id="inputDiv" style="display:none;">
-            <input type="number" id="agentInput" placeholder="Enter agent number">
-            <button onclick="addAgent()">Submit</button>
+            <form id="agentForm", action="/add_agents" method="post">
+                <input type="number" id="agentInput" placeholder="Enter agent number" name="agent_number" required>
+                <button type="submit">Submit</button>
+            </form>
         </div>
+        <script>
+            document.getElementById('agentForm').addEventListener('submit', function(event) {
+                const agentNumber = document.getElementById('agentInput').value;
+                if (!agentNumber) {
+                    alert('Please enter an agent number.');
+                    event.preventDefault();
+                }
+            });
+        </script>
     {% endif %}
-<div id="messageContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+    <!-- Уведомление -->
+    <div id="notification" class="notification"></div>
 </body>
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+    const fileForm = document.getElementById('fileForm');
+    const notification = document.getElementById('notification');
+    const uploadButton = document.getElementById('uploadButton');
+    const fileField = document.getElementById('fileField');
+    const fileInput = document.getElementById('fileInput');
+    const parserWidget = document.getElementById('parserWidget');
+    
+    // Открытие окна выбора файла
+    uploadButton.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Когда файл выбран, отправляем форму
+    fileInput.addEventListener('change', async (event) => {
+        event.preventDefault(); // Предотвращаем стандартное поведение формы
+        const file = event.target.files[0];
+        if (file) {
+            // Устанавливаем файл в скрытое поле формы
+            fileField.files = fileInput.files;
+            const formData = new FormData(fileForm);
+            try {
+                // Отправляем запрос через fetch
+                const response = await fetch(fileForm.action, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                // Проверяем ответ
+                if (response.ok) {
+                    const data = await response.json();
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification('Ошибка загрузки файла', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                showNotification('Ошибка связи с сервером', 'error');
+            }
+        }
+    });
+    
+    parserWidget.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+        // Получаем данные формы
+        const formData = new FormData(parserWidget);
+
+        try {
+            // Отправляем запрос на сервер
+            const response = await fetch(parserWidget.action, {
+                method: 'POST',
+                body: formData,
+            });
+
+            // Обрабатываем ответ
+            if (response.ok) {
+                const data = await response.json();
+                showNotification(data.message, 'success'); // Уведомление об успехе
+            } else {
+                const errorData = await response.json();
+                showNotification(errorData.message || 'Ошибка при отправке данных', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification('Ошибка связи с сервером', 'error'); // Уведомление об ошибке
+        }
+    });
+
+    function showNotification(message, type) {
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        notification.style.display = 'block';
+
+        // Скрываем уведомление через 3 секунды
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+</script>
 </html>

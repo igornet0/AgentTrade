@@ -1,9 +1,9 @@
 from .App_trade import *
 from .Parser import *
 from .App_kucoin import KuCoinAPI
+from .models import *
 
 from datetime import datetime
-
 
 timeserials_amount = {
     "5m":72,
@@ -27,3 +27,16 @@ class Handler:
         self.parser.start_web(self.URL, entry=False)
         for time in timeserials_amount.keys():
             df = self.parser.start_parser(time_start, timeserials_amount[time], time)
+
+
+class Handler_parser:
+
+    def __init__(self, coins: list[str], URL: str = None, api: KuCoinAPI = None) -> None:
+
+        self.coins = coins
+        self.api = api
+        self.URL = URL
+        self.buffer = {}
+
+    def start(self):
+        
