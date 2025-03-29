@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    container_name: postgres
+    environment:
+      POSTGRES_USER: client_db
+      POSTGRES_PASSWORD: gnj345wegnwue45i
+      POSTGRES_DB: db_trade
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    
+
+  fastapi-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fastapi-app
+    ports:
+      - "5000:5000"
+    environment:
+      - FASTAPI_APP=app.py
+      - FASTAPI_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/app_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    command: celery -A tasks worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/app_db
+    depends_on:
+      - redis
+      - rabbitmq
+      - postgres
+
+  flower:
+    build:
+      context: .
+      # dockerfile: Dockerfile
+    container_name: flower
+    command: celery -A tasks flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - rabbitmq
+
+  redis:
+    image: redis:7.0
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    container_name: redis
+    ports:
+      - "6379:6379"
+    
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # Для RabbitMQ (брокер сообщений)
+      - "15672:15672" # Для RabbitMQ Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    
+
+volumes:
+  postgres_data:

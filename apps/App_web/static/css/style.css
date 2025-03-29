@@ -1,0 +1,25 @@
+
+.device-item:hover {
+  background-color: #e6e6e6;
+}
+.submenu {
+  display: none;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+
+form {
+  display: inline-block; /* Это позволяет формам располагаться в ряд */
+  margin-right: 10px; 
+}
+
+#tradeWidget, #trainWidget {
+  display: none; /* Скрываем виджет по умолчанию */
+  border: 1px solid #ccc;
+  padding: 20px;
+  margin-top: 20px;
+  width: 300px;
+}

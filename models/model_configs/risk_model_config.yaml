@@ -1,0 +1,15 @@
+model:
+  name: "ResNet18"
+  input_size: 224
+  num_classes: 10
+  pretrained: true
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  optimizer: "Adam"
+  scheduler: "StepLR"
+
+paths:
+  weights: "models/model_weights/resnet18_weights.pth"
+  class_names: "data/processed/class_names.txt"

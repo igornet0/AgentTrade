@@ -1,0 +1,36 @@
+<!-- templates/chat.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Financial Analyst Chat</title>
+    <link rel="stylesheet" href="/static/css/style_chat.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>💰 Crypto News Analyst</h1>
+            <div class="model-status">
+                <span class="status-dot"></span>
+                <span>DeepSeek LLM</span>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <!-- Сообщения будут добавляться сюда -->
+        </div>
+
+        <div class="thinking-indicator" id="thinking-indicator">
+            <div class="dot-flashing"></div>
+        </div>
+
+        <div class="input-container">
+            <form id="chat-form" onsubmit="return handleSubmit(event)">
+                <textarea id="user-input" placeholder="Paste your crypto news here..." required></textarea>
+                <button type="submit">Analyze →</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

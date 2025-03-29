@@ -1,0 +1,16 @@
+FROM python:3.10
+
+# Устанавливаем рабочую директорию
+WORKDIR /App_web
+
+# Копируем файлы
+COPY . /App_web
+
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Открываем порт 5000 для Flask
+EXPOSE 5000
+
+# Команда запуска (переопределяется в docker-compose.yml для разных сервисов)
+CMD ["flask", "run", "--host=0.0.0.0"]
